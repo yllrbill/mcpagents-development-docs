@@ -1,0 +1,21 @@
+# MCPAgents Documentation Source Revision
+# 此文件由同步工作流自动生成，用于版本溯源
+
+source_repo: daodao97/chatmcp (private)
+source_commit: 26f5ba64f00478a046f5e7212e45cbae9a4b7e58
+source_branch: main
+sync_timestamp: 2025-12-19T12:37:47Z
+triggered_by: workflow_dispatch
+actor: yllrbill
+whitelist_version: 1.0.0
+
+# 白名单内容
+exported_paths:
+  - docs/guide/
+  - .claude/commands/
+  - .claude/settings.json
+  - mkdocs.yml
+  - CLAUDE.md
+  - .markdownlint.json
+
+# 在新对话中使用此 SHA 作为版本基准

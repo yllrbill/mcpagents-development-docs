@@ -1,0 +1,132 @@
+site_name: MCPAgents Docs
+site_description: 跨平台 AI Chat 客户端 + MCP 运行时的完整开发文档
+site_author: MCPAgents Team
+docs_dir: docs/guide
+site_dir: site
+
+repo_name: daodao97/chatmcp
+repo_url: https://github.com/daodao97/chatmcp
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换至深色模式
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换至浅色模式
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: zh
+
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: docs/guide
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/daodao97/chatmcp
+
+# 链接验证配置
+validation:
+  links:
+    # 外部链接（指向 docs_dir 外）
+    absolute_links: warn
+    # 锚点链接
+    anchors: warn
+    # 未索引的页面
+    unrecognized_links: warn
+  nav:
+    # 导航中的链接
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+
+nav:
+  - 首页: index.md
+
+  - 入门:
+      - 文档规范: 00_DOC_RULES.md
+
+  - 架构:
+      - 项目结构: 10_PROJECT_STRUCTURE.md
+      - 核心模块: 20_CORE_MODULE.md
+      - 架构决策 (ADR):
+          - 概述: adr/README.md
+          - 单写者 Daemon: adr/0001-single-writer-daemon.md
+          - SSE 事件流: adr/0002-sse-event-streaming.md
+          - CAS 状态机: adr/0003-cas-state-machine.md
+
+  - 扩展模块:
+      - 托盘/桌面常驻: extensions/30_TRAY.md
+      - 本地模型/Ollama: extensions/31_LOCAL_MODELS.md
+      - LLM 集成: extensions/32_LLM_INTEGRATIONS.md
+      - 会话 GUI: extensions/33_SESSION_GUI.md
+      - 桌面 Agents: extensions/34_DESKTOP_AGENTS.md
+      - MCP Servers: extensions/35_MCP_SERVERS.md
+      - 安全与隐私: extensions/36_SECURITY_PRIVACY.md
+      - NSFW 扩展: extensions/37_ADULT_NSFW.md
+
+  - 参考:
+      - 配置参考: reference/config_reference.md
+      - 公开文档范围: reference/PUBLIC_EXPORT_SCOPE.md
+      - LLM 快速入门模板: reference/LLM_QUICKSTART_TEMPLATE.md
+
+  - 运维:
+      - Daemon 运维手册: runbook/daemon_ops.md
+      - 故障排查: runbook/troubleshooting.md
+
+  - 开发:
+      - 扩展开发指南: howto/add_extension.md
+      - 文档研读与维护: howto/docs_reading_maintenance_guide.md

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write(docs/guide/**)",
+      "Write(mkdocs.yml)",
+      "Write(CLAUDE.md)",
+      "Write(.claude/**)",
+      "Bash(mkdocs serve*)",
+      "Bash(mkdocs build*)",
+      "Bash(mkdocs gh-deploy*)",
+      "Bash(pip install -r docs/guide/requirements-docs.txt*)",
+      "Bash(pip show mkdocs*)",
+      "Bash(dart format*)",
+      "Bash(dart analyze*)",
+      "Bash(dart test*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(curl*)",
+      "Bash(Get-ChildItem*)",
+      "Bash(Get-Content*)",
+      "Bash(Test-Path*)",
+      "Bash(Select-String*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(Remove-Item -Recurse -Force /)",
+      "Bash(*--force*push*)",
+      "Bash(*reset --hard*)"
+    ]
+  },
+  "preferences": {
+    "autoApprove": false,
+    "verboseMode": false
+  }
+}

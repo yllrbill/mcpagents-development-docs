@@ -1,0 +1,50 @@
+%% MCPAgents C4 Container 图
+%% 展示系统内部的容器划分
+
+graph TB
+    subgraph Users["用户"]
+        user["用户"]
+    end
+
+    subgraph MCPAgents["MCPAgents 系统"]
+        subgraph Frontend["前端层"]
+            gui["GUI<br/>(Flutter)<br/>跨平台图形界面"]
+            cli["CLI<br/>(Dart)<br/>命令行工具"]
+            tray["System Tray<br/>(Python)<br/>托盘启动器"]
+        end
+
+        subgraph Backend["后端层"]
+            daemon["Daemon<br/>(mcpagentsd)<br/>核心运行时"]
+        end
+
+        subgraph Data["数据层"]
+            db[("SQLite DB<br/>chatmcp.db")]
+            eventlog[("Event Log<br/>JSONL")]
+            config[("Config<br/>JSON")]
+        end
+    end
+
+    subgraph External["外部系统"]
+        llm["LLM Providers"]
+        mcp["MCP Servers"]
+    end
+
+    user --> gui
+    user --> cli
+    user --> tray
+
+    tray -->|"启动/监控"| daemon
+    gui -->|"HTTP + SSE"| daemon
+    cli -->|"HTTP + SSE"| daemon
+
+    daemon -->|"读写"| db
+    daemon -->|"写入"| eventlog
+    daemon -->|"读取"| config
+
+    daemon -->|"API 调用"| llm
+    daemon -->|"工具调用"| mcp
+
+    style daemon fill:#4CAF50,color:#fff
+    style gui fill:#2196F3,color:#fff
+    style cli fill:#2196F3,color:#fff
+    style db fill:#FF9800,color:#fff

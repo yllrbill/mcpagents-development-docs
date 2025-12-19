@@ -1,0 +1,62 @@
+%% MCPAgents 核心事件流 / Run 生命周期
+%% 展示一次 LLM 调用的完整流程
+
+sequenceDiagram
+    participant Client as 客户端 (GUI/CLI)
+    participant Router as HTTP Router
+    participant Queue as QueueService
+    participant Run as RunService
+    participant Smart as SmartRouter
+    participant Exec as ResilientExecutor
+    participant LLM as LLM Provider
+    participant Event as EventService
+    participant DB as Database
+
+    %% 请求创建
+    Client->>Router: POST /v1/runs
+    Router->>Router: Token 鉴权
+    Router->>Queue: enqueue(request)
+    Queue->>DB: INSERT run (status=queued)
+    Queue->>Event: emit(run.created)
+    Event-->>Client: SSE: run.created
+    Router-->>Client: 200 OK {run_id}
+
+    %% SSE 订阅
+    Client->>Router: GET /v1/runs/{id}/events (SSE)
+
+    %% 执行开始
+    Queue->>Run: pick up run
+    Run->>DB: UPDATE status=running (CAS)
+    Run->>Event: emit(run.started)
+    Event-->>Client: SSE: run.started
+
+    %% 路由决策
+    Run->>Smart: routeTwoPhase()
+    Smart->>Smart: Phase A: 分类任务
+    Smart->>Event: emit(route.phase_a)
+    Smart->>Smart: Phase B: 选择模型
+    Smart->>Event: emit(route.phase_b)
+    Smart-->>Run: RoutingDecision
+
+    Run->>Event: emit(route.decision)
+    Event-->>Client: SSE: route.decision
+
+    %% LLM 调用
+    Run->>Exec: execute(decision)
+    Exec->>LLM: 调用 API (流式)
+
+    loop 流式响应
+        LLM-->>Exec: token
+        Exec->>Event: emit(llm.delta)
+        Event-->>Client: SSE: llm.delta
+    end
+
+    LLM-->>Exec: 完成
+    Exec-->>Run: 结果
+
+    %% 完成
+    Run->>DB: UPDATE status=succeeded (CAS)
+    Run->>Event: emit(run.succeeded)
+    Event-->>Client: SSE: run.succeeded
+
+    Note over Client,DB: 终态事件持久化到 DB，支持断线续传

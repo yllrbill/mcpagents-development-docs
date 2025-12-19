@@ -1,0 +1,33 @@
+%% MCPAgents C4 Context 图
+%% 展示系统与外部实体的交互关系
+
+graph TB
+    subgraph Users["用户"]
+        developer["开发者"]
+        enduser["普通用户"]
+        claudecode["Claude Code<br/>(AI 编程助手)"]
+    end
+
+    subgraph MCPAgents["MCPAgents 系统"]
+        system["MCPAgents<br/>跨平台 AI Chat 客户端<br/>+ MCP 运行时"]
+    end
+
+    subgraph External["外部系统"]
+        llm["LLM Providers<br/>(OpenAI, Claude,<br/>Ollama, Poe 等)"]
+        mcp["MCP Servers<br/>(文件系统, Git,<br/>数据库等工具)"]
+        termux["Termux<br/>(Android 远程终端)"]
+        tunnel["Cloudflare Tunnel<br/>(公网访问)"]
+    end
+
+    developer -->|"使用 GUI/CLI"| system
+    enduser -->|"使用 GUI"| system
+    claudecode -->|"CLI/API 控制"| system
+
+    system -->|"调用 LLM API"| llm
+    system -->|"调用 MCP 工具"| mcp
+    termux -->|"远程配对访问"| system
+    system -->|"公网暴露"| tunnel
+
+    style system fill:#4CAF50,color:#fff
+    style llm fill:#2196F3,color:#fff
+    style mcp fill:#FF9800,color:#fff
