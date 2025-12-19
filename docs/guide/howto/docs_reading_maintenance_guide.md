@@ -170,4 +170,4 @@
 - [文档规范](../00_DOC_RULES.md)
 - [扩展开发指南](add_extension.md)
 - [Daemon 运维手册](../runbook/daemon_ops.md)
-- [CLAUDE.md](../../../CLAUDE.md) - 项目上下文说明书
+- [项目首页](../index.md) - 项目概述与阅读路线

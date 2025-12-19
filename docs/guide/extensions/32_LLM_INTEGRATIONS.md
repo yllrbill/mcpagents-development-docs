@@ -344,6 +344,6 @@ curl -X POST http://127.0.0.1:8787/v1/runs \
 
 ## 12. 相关文档
 
-- [20_CORE_MODULE.md](../20_CORE_MODULE.md) - SmartRouter 详解
-- [31_LOCAL_MODELS.md](31_LOCAL_MODELS.md) - 本地 Ollama 集成
-- [DAEMON_DEVELOPMENT_GUIDE.md](../../DAEMON_DEVELOPMENT_GUIDE.md) - 第 10 节 智能路由
+- [核心模块](../20_CORE_MODULE.md) - SmartRouter 详解
+- [本地模型](31_LOCAL_MODELS.md) - 本地 Ollama 集成
+- [配置参考](../reference/config_reference.md) - 路由配置详解

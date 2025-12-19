@@ -167,7 +167,7 @@ stateDiagram-v2
 
 ### 5.1 HTTP REST API
 
-详见 `docs/DAEMON_DEVELOPMENT_GUIDE.md` 第 9 节，主要端点：
+主要端点：
 
 | 类别 | 端点 | 说明 |
 |------|------|------|
@@ -421,7 +421,7 @@ D:\claude1\MCPAgents\scripts\verify_service.sh
 
 ## 12. 相关文档
 
-- [10_PROJECT_STRUCTURE.md](10_PROJECT_STRUCTURE.md) - 项目结构总览
-- [DAEMON_DEVELOPMENT_GUIDE.md](../DAEMON_DEVELOPMENT_GUIDE.md) - 完整开发指南
-- [extensions/35_MCP_SERVERS.md](extensions/35_MCP_SERVERS.md) - MCP 服务器生态
-- [extensions/36_SECURITY_PRIVACY.md](extensions/36_SECURITY_PRIVACY.md) - 安全与隐私
+- [项目结构](10_PROJECT_STRUCTURE.md) - 项目结构总览
+- [配置参考](reference/config_reference.md) - 完整配置说明
+- [MCP 服务器](extensions/35_MCP_SERVERS.md) - MCP 服务器生态
+- [安全与隐私](extensions/36_SECURITY_PRIVACY.md) - 安全与隐私

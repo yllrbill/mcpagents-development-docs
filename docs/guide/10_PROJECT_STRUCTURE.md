@@ -324,7 +324,7 @@ flowchart LR
 
 ## 10. 相关文档
 
-- [INDEX.md](INDEX.md) - 文档入口与阅读路线
-- [00_DOC_RULES.md](00_DOC_RULES.md) - 文档规范
-- [20_CORE_MODULE.md](20_CORE_MODULE.md) - 核心模块详解
-- [DAEMON_DEVELOPMENT_GUIDE.md](../DAEMON_DEVELOPMENT_GUIDE.md) - Daemon 开发完整指南
+- [文档首页](index.md) - 文档入口与阅读路线
+- [文档规范](00_DOC_RULES.md) - 写作规范与术语表
+- [核心模块](20_CORE_MODULE.md) - 核心模块详解
+- [配置参考](reference/config_reference.md) - 完整配置说明

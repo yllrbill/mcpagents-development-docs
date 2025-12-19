@@ -270,5 +270,5 @@ Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' | S
 
 ## 12. 相关文档
 
-- [20_CORE_MODULE.md](../20_CORE_MODULE.md) - Daemon 核心模块
-- [DAEMON_DEVELOPMENT_GUIDE.md](../../DAEMON_DEVELOPMENT_GUIDE.md) - 第 7 节 系统托盘
+- [核心模块](../20_CORE_MODULE.md) - Daemon 核心模块
+- [运维手册](../runbook/daemon_ops.md) - Daemon 运维指南

@@ -408,7 +408,7 @@ curl -H "Authorization: Bearer <read_only_token>" \
 
 ## 13. 相关文档
 
-- [20_CORE_MODULE.md](../20_CORE_MODULE.md) - 核心安全机制
-- [35_MCP_SERVERS.md](35_MCP_SERVERS.md) - MCP 工具安全
-- [37_ADULT_NSFW.md](37_ADULT_NSFW.md) - NSFW 内容安全
-- [DAEMON_DEVELOPMENT_GUIDE.md](../../DAEMON_DEVELOPMENT_GUIDE.md) - 第 6 节 安全与兼容性
+- [核心模块](../20_CORE_MODULE.md) - 核心安全机制
+- [MCP 服务器](35_MCP_SERVERS.md) - MCP 工具安全
+- [NSFW 模块](37_ADULT_NSFW.md) - NSFW 内容安全
+- [配置参考](../reference/config_reference.md) - 安全配置详解

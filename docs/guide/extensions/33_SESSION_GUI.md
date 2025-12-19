@@ -299,7 +299,7 @@ ThemeMode.system
 
 ### 10.1 UAT 测试
 
-详见 `docs/GUI_UAT_QUICK_START.md`:
+UAT 测试脚本：
 
 ```bash
 # Windows UAT
@@ -345,6 +345,6 @@ scripts/uat/linux_gui_uat.sh
 
 ## 12. 相关文档
 
-- [20_CORE_MODULE.md](../20_CORE_MODULE.md) - Daemon 核心
-- [30_TRAY.md](30_TRAY.md) - 托盘启动器
-- [GUI_UAT_QUICK_START.md](../../GUI_UAT_QUICK_START.md) - GUI 测试指南
+- [核心模块](../20_CORE_MODULE.md) - Daemon 核心
+- [托盘启动器](30_TRAY.md) - 系统托盘集成
+- [故障排查](../runbook/troubleshooting.md) - GUI 问题排查
