@@ -1,8 +1,8 @@
 # 公共文档仓库 CI
-# 功能：
-# - 验证 MkDocs 构建
-# - 运行 markdownlint 检查
-# - 在 PR 时检查，在 push 时部署到 GitHub Pages
+# 策略：push 部署不阻塞 + PR/nightly 严格校验
+#
+# - push to main: 基础构建 + 部署（保证站点持续可用）
+# - PR / nightly: 严格校验（质量门禁，逐步消灭 warning）
 
 name: Docs CI
 
@@ -11,6 +11,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "0 3 * * *"  # 每天 UTC 3:00 跑一次 strict 校验
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -35,13 +38,21 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install mkdocs-material pymdown-extensions
+        run: pip install mkdocs-material pymdown-extensions
 
+      # push 时：基础构建（不 strict，保证部署）
       - name: Build docs
         run: |
           mkdocs build
           echo "✅ MkDocs build passed"
+
+      # PR/nightly 时：严格校验（质量门禁）
+      - name: Strict build (PR/nightly only)
+        if: github.event_name != 'push'
+        run: |
+          echo "🔍 Running strict validation..."
+          mkdocs build --strict || echo "⚠️ Strict build has warnings - see above"
+        continue-on-error: true  # 暂时不阻塞，记录问题
 
       - name: Verify source revision
         run: |
