@@ -182,21 +182,45 @@ flowchart TD
 }
 ```
 
-### 6.3 审计事件格式
+### 6.3 安全审计 JSONL 格式
+
+安全审计日志存储在 `event_logs/security_audit.jsonl`，记录**所有**工具调用决策（allow/deny）：
 
 ```json
 {
-  "timestamp": "2025-12-19T14:30:00Z",
-  "event_type": "security.tool_denied",
+  "v": "1",
+  "ts": "2025-12-19T14:30:00.000Z",
   "run_id": "run_abc123",
   "tool": "filesystem.write_file",
-  "reason": "path_not_allowed",
+  "decision": "deny",
+  "reason_code": "dangerous_pattern",
   "details": {
-    "path": "/etc/passwd",
-    "client_ip": "192.168.1.100"
+    "args_summary": {"path": "/etc/passwd"},
+    "info": "blocked_path:/etc/passwd"
   }
 }
 ```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `v` | string | Schema 版本（当前 "1"）|
+| `ts` | string | ISO 8601 UTC 时间戳 |
+| `run_id` | string? | 关联的 run ID |
+| `tool` | string | 工具名称 |
+| `decision` | string | "allow" 或 "deny" |
+| `reason_code` | string? | 拒绝原因代码 |
+| `details` | object? | 脱敏后的参数摘要 |
+
+#### 拒绝原因代码
+
+| reason_code | 说明 |
+|-------------|------|
+| `blacklisted_tool` | 工具在黑名单中 |
+| `unlisted_tool` | 工具不在白名单中 |
+| `argument_size_exceeded` | 参数超过大小限制 |
+| `invalid_json` | 参数 JSON 解析失败 |
+| `schema_violation` | 参数不符合 schema |
+| `dangerous_pattern` | 检测到危险模式（路径/注入） |
 
 ---
 
@@ -263,6 +287,27 @@ final sensitivePatterns = [
 | tool.arguments | 参数 JSON | arguments_hash |
 | api_key | sk-xxx | [REDACTED] |
 
+#### 安全审计脱敏规则
+
+`ToolSecurityService` 在写入审计 JSONL 时自动脱敏：
+
+| 模式 | 处理方式 |
+|------|----------|
+| 字段名含 `token`, `secret`, `password`, `api_key`, `authorization`, `credential`, `private_key` | 值替换为 `[REDACTED]` |
+| 值以 `Bearer ` 开头 | 替换为 `[REDACTED]` |
+| 值以 `sk-` 或 `pk-` 开头 | 替换为 `[REDACTED]` |
+| 字符串超过 `maxStringLength`（默认 128） | 截断并标注 `...(truncated, N chars)` |
+| Map 类型 | 仅记录 keys（不记录 values） |
+| List 类型 | 仅记录 `List[N items]` |
+
+```dart
+// 示例：脱敏前
+{"api_token": "sk-abc123", "content": "very long text..."}
+
+// 示例：脱敏后
+{"api_token": "[REDACTED]", "content": "very long tex...(truncated, 500 chars)"}
+```
+
 ### 8.4 隐私路由
 
 ```json
@@ -297,7 +342,12 @@ final sensitivePatterns = [
     "require_auth": true,
     "default_scopes": ["read", "run"],
     "token_expiry_days": 30,
-    "audit_retention_days": 90
+    "audit_retention_days": 90,
+    "audit": {
+      "enabled": true,
+      "mode": "block",
+      "max_string_length": 128
+    }
   },
   "mcp": {
     "security": {
@@ -311,7 +361,29 @@ final sensitivePatterns = [
 }
 ```
 
-### 9.2 事件日志保留
+### 9.2 审计模式配置
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `audit.enabled` | `true` | 是否启用审计日志 |
+| `audit.mode` | `"block"` | `"block"`: 阻断+记录；`"auditOnly"`: 只记录不阻断 |
+| `audit.max_string_length` | `128` | 字符串截断阈值 |
+
+#### 回滚选项
+
+```dart
+// 完全关闭审计（紧急回滚）
+final service = ToolSecurityService(
+  auditConfig: SecurityAuditConfig.disabled,
+);
+
+// 只记录不阻断（灰度/调试）
+final service = ToolSecurityService(
+  auditConfig: SecurityAuditConfig.auditOnly,
+);
+```
+
+### 9.3 事件日志保留
 
 ```dart
 // event_service.dart
@@ -328,7 +400,7 @@ await eventService.runRetentionCleanup();
 ### 10.1 安全测试用例
 
 ```dart
-// tool_security_test.dart
+// tool_security_test.dart (22 tests)
 group('Path Security', () {
   test('blocks .ssh directory', () {
     expect(service.isPathSafe('/home/user/.ssh/id_rsa'), isFalse);
@@ -346,7 +418,40 @@ group('Command Injection', () {
 });
 ```
 
-### 10.2 鉴权测试
+### 10.2 审计 JSONL 测试
+
+```dart
+// tool_security_audit_test.dart (19 tests)
+group('Security Audit JSONL', () {
+  test('audit file is created on first write', () async { ... });
+  test('each line is valid JSON', () async { ... });
+  test('allow decisions are logged', () async { ... });
+  test('deny decisions are logged with reason code', () async { ... });
+});
+
+group('Sanitization', () {
+  test('sensitive field names are redacted', () async { ... });
+  test('bearer tokens in values are redacted', () async { ... });
+  test('long strings are truncated', () async { ... });
+});
+
+group('Rollback Options', () {
+  test('disabled audit produces no file', () async { ... });
+  test('auditOnly mode allows blocked tools', () async { ... });
+});
+
+group('Concurrent Writes', () {
+  test('multiple rapid writes maintain integrity', () async { ... });
+});
+```
+
+运行测试：
+```bash
+dart test test/tool_security_test.dart test/tool_security_audit_test.dart
+# 41 tests passed
+```
+
+### 10.3 鉴权测试
 
 ```bash
 # 无 Token 访问 (应返回 401)
@@ -375,6 +480,10 @@ curl -H "Authorization: Bearer <read_only_token>" \
 - [x] 日志脱敏
 - [x] 隐私路由 (排除中国 Provider)
 - [x] 设备配对 (limited scopes)
+- [x] **安全审计 JSONL** - 工具调用决策（allow/deny）持久化
+- [x] **并发安全写入** - Future chain 串行队列
+- [x] **敏感数据脱敏** - token/secret/password 自动 redact
+- [x] **审计回滚开关** - disabled/auditOnly 模式
 
 ### Next
 - [ ] Token 过期机制
