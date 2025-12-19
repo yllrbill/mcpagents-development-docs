@@ -1,0 +1,101 @@
+# 公共文档仓库 CI 模板
+# 功能：
+# - 验证 MkDocs 构建（严格模式）
+# - 运行 markdownlint 检查
+# - 在 PR 时检查，在 push 时部署到 GitHub Pages
+
+name: Docs CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: 验证文档
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install mkdocs-material pymdown-extensions
+
+      - name: Build docs (strict mode)
+        run: |
+          mkdocs build --strict
+          echo "✅ MkDocs strict build passed"
+
+      - name: Setup Node.js (for markdownlint)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: |
+          markdownlint docs/guide/**/*.md --config .markdownlint.json || true
+          echo "⚠️ Markdownlint completed (warnings allowed)"
+
+      - name: Verify source revision
+        run: |
+          if [ -f "docs/guide/reference/SOURCE_REVISION.txt" ]; then
+            echo "📋 Source Revision Info:"
+            cat docs/guide/reference/SOURCE_REVISION.txt
+          else
+            echo "⚠️ SOURCE_REVISION.txt not found"
+          fi
+
+  # Job 2: 部署到 GitHub Pages（仅 push 到 main 时）
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MkDocs
+        run: pip install mkdocs-material pymdown-extensions
+
+      - name: Build site
+        run: mkdocs build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
