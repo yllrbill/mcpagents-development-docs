@@ -2,8 +2,9 @@
 # 将此文件复制到公共仓库: .github/workflows/docs-ci.yml
 #
 # 功能：
-# - 验证 MkDocs 构建（严格模式）
+# - 验证 MkDocs 构建（严格模式作为质量门禁）
 # - 运行 markdownlint 检查
+# - 生成 warnings 报告（artifact）
 # - 在 PR 时检查，在 push 时部署到 GitHub Pages
 
 name: Docs CI
@@ -13,6 +14,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # 每天 UTC 0:00 运行 nightly 检查
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,7 +29,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Job 1: 验证文档
+  # Job 1: 验证文档（严格模式）
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -41,9 +46,33 @@ jobs:
           pip install mkdocs-material pymdown-extensions
 
       - name: Build docs (strict mode)
+        id: strict_build
         run: |
-          mkdocs build --strict
-          echo "✅ MkDocs strict build passed"
+          # 运行 strict build 并捕获输出
+          set +e
+          mkdocs build --strict 2>&1 | tee build_output.txt
+          BUILD_EXIT_CODE=$?
+          set -e
+
+          # 统计 warnings
+          WARNING_COUNT=$(grep -c "WARNING" build_output.txt || echo "0")
+          echo "warning_count=$WARNING_COUNT" >> $GITHUB_OUTPUT
+
+          if [ $BUILD_EXIT_CODE -eq 0 ]; then
+            echo "✅ MkDocs strict build passed (0 warnings)"
+          else
+            echo "❌ MkDocs strict build failed with $WARNING_COUNT warnings"
+            echo "::error::Strict build failed. See build_output.txt artifact for details."
+            exit 1
+          fi
+
+      - name: Upload build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkdocs-build-output
+          path: build_output.txt
+          retention-days: 7
 
       - name: Setup Node.js (for markdownlint)
         uses: actions/setup-node@v4
@@ -55,8 +84,16 @@ jobs:
 
       - name: Run markdownlint
         run: |
-          markdownlint docs/guide/**/*.md --config .markdownlint.json || true
+          markdownlint docs/guide/**/*.md --config .markdownlint.json 2>&1 | tee markdownlint_output.txt || true
           echo "⚠️ Markdownlint completed (warnings allowed)"
+
+      - name: Upload markdownlint output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: markdownlint-output
+          path: markdownlint_output.txt
+          retention-days: 7
 
       - name: Verify source revision
         run: |
@@ -66,6 +103,23 @@ jobs:
           else
             echo "⚠️ SOURCE_REVISION.txt not found"
           fi
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## Documentation Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.strict_build.outputs.warning_count }}" = "0" ]; then
+            echo "| MkDocs Strict | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| MkDocs Strict | ❌ ${{ steps.strict_build.outputs.warning_count }} warnings |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See artifacts for detailed output." >> $GITHUB_STEP_SUMMARY
 
   # Job 2: 部署到 GitHub Pages（仅 push 到 main 时）
   deploy:
@@ -87,8 +141,8 @@ jobs:
       - name: Install MkDocs
         run: pip install mkdocs-material pymdown-extensions
 
-      - name: Build site
-        run: mkdocs build
+      - name: Build site (strict mode)
+        run: mkdocs build --strict
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
