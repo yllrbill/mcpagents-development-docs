@@ -2,9 +2,9 @@
 # 此文件由同步工作流自动生成，用于版本溯源
 
 source_repo: daodao97/chatmcp (private)
-source_commit: c863260fa1921c43383ddc3bf1bcba20b3062833
+source_commit: 23d67da29926c3f634a4c576b1fe587b89d08ea9
 source_branch: main
-sync_timestamp: 2025-12-19T14:51:38Z
+sync_timestamp: 2025-12-19T15:34:37Z
 triggered_by: push
 actor: yllrbill
 whitelist_version: 1.0.0

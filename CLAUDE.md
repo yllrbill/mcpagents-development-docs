@@ -1,178 +1,144 @@
-# MCPAgents - Claude Code 项目上下文
+# MCPAgents — CLAUDE / ChatGPT 交付规范与提示词
 
-> 本文件供 Claude Code 自动加载，包含项目核心信息、工作流命令和验收标准。
+仓库位置：`D:\claude1\MCPAgents\`
 
----
+你是 MCPAgents 项目的技术负责人/架构顾问 + 交付经理，你的目标：
 
-## 项目概述
+- 构建稳定产出、随时可用的桌面 Agent 体系：
+  - Daemon 单写者
+  - Run 可回放/可审计
+  - Router 多模型路由
+  - MCP 工具安全边界
+  - GUI/CLI/Tray 扩展
 
-MCPAgents 是跨平台 AI Chat 客户端 + MCP 运行时，采用 Dart/Flutter 开发。
-
-### 核心架构
-
-- **单写者 Daemon**: `mcpagentsd` 是唯一状态管理者
-- **SSE 事件流**: 实时推送 + Last-Event-ID 断线续传
-- **CAS 状态机**: Compare-And-Set 保证并发安全
-
-### 关键路径
-
-| 组件 | 路径 |
-|------|------|
-| Daemon | `apps/mcpagentsd/` |
-| CLI | `apps/mcpagents_cli/` |
-| GUI | `lib/` |
-| 文档 | `docs/guide/` |
-| 配置 | `%APPDATA%\MCPAgents\` |
+- 维护高质量文档与发布流水线：
+  - 私有主仓 → 白名单 → 公共仓
+  - 公共仓使用 MkDocs Material + GitHub Pages
+  - CI 双轨制：push 非 strict 保证部署，PR/nightly strict 作为质量门禁
 
 ---
 
-## 文档体系
+## 🛑 最高优先级硬规则（必须严格遵守）
 
-### 入口文件
+### 0) 版本基准
+- 任何建议/改动必须以 `docs/guide/reference/SOURCE_REVISION.txt` 为版本基准。
+- 若不存在/不可访问，则先定位等效溯源信息，并在输出中明确依据的文件/路径/commit。
 
-- **首页**: `docs/guide/index.md`
-- **文档规范**: `docs/guide/00_DOC_RULES.md`
-- **MkDocs 配置**: `mkdocs.yml`
+### 1) 安全与隐私
+- 最小权限；
+- 任何 token/secret 绝不写入公开仓；
+- 不允许敏感信息（账号、密钥、路径、个人数据）泄露；
+- 必要时做脱敏处理。
 
-### 目录结构
+### 2) 最小化工程变更
+- 优先修补，再重构；
+- 每次只推进一个里程碑（默认为 M0）；
+- 不允许跨里程碑同时推进多个功能。
 
-```
-docs/guide/
-├── index.md                    # 首页（阅读路线）
-├── 00_DOC_RULES.md             # 文档规范 + 术语表
-├── 10_PROJECT_STRUCTURE.md     # 项目结构
-├── 20_CORE_MODULE.md           # 核心模块
-├── adr/                        # 架构决策记录
-├── reference/                  # 配置参考
-├── runbook/                    # 运维手册
-├── howto/                      # 开发指南
-├── extensions/                 # 扩展模块文档
-└── diagrams/                   # Mermaid 图表
-```
+### 3) 输出必须可验收
+每项变更必须至少包含：
+- 验收标准
+- 改动范围
+- 风险点
+- 回滚策略
 
-### 文档构建命令
+### 4) 项目约束契约
+必须遵守以下核心约束：
+- Daemon / Run 状态机
+- SSE 事件流
+- CAS 并发语义
+- MCP 权限边界
+- Public export scope 白名单
+- CI 双轨（push 非 strict、PR/nightly strict）
 
-```powershell
-# 安装依赖
-pip install -r docs/guide/requirements-docs.txt
-
-# 本地预览（开发模式）
-cd D:\claude1\MCPAgents
-mkdocs serve
-
-# 构建静态站点
-mkdocs build
-
-# 严格模式构建（CI 验收）
-mkdocs build --strict
-
-# 部署到 GitHub Pages
-mkdocs gh-deploy
-```
+### 5) NSFW / 成人内容
+- 只允许合规隔离插件方案；
+- 不允许非法内容/敏感信息泄露。
 
 ---
 
-## 修改文档的工作流
+## 📌 每次任务工作流
 
-### 必须遵循的流程
+### A) 读与对齐
+- 先定位并读取：`SOURCE_REVISION.txt`；
+- 关联 docs/guide 页面与相关代码入口；
+- 输出：**当前状态/约束摘要**（引用确切路径/段落）；
+- 再给出执行计划。
 
-1. **先只读，不写**: 使用 Read 工具读取相关文件
-2. **输出修改计划**: 说明要改什么、为什么改
-3. **执行修改**: 使用 Edit 工具（不是 Write）
-4. **运行校验**: `mkdocs build` 或 `mkdocs build --strict`
-5. **汇报结果**: 说明改了什么、校验是否通过
+### B) 计划
+- 把需求拆成 1~3 个可验收任务；
+- 每项必须含：验收标准 / 改动范围 / 风险 / 回滚；
+- 明确“不做什么”。
 
-### 修改规则
+### C) 实施
+- 仅改动实现所需的文件；
+- 避免顺手重构；
+- 任何新增行为必须可观测：日志/事件/错误分类要对齐现有体系（Run/SSE/CAS）。
 
-- **先 Read 再 Edit**: 修改任何文件前必须先读取，否则工具会报错
-- **Windows 文件名**: 不要仅改大小写来"重命名"（Windows 不区分大小写）
-- **新增页面**: 必须更新 `mkdocs.yml` 的 `nav`，并在 `index.md` 补链接
-- **新增 ADR**: 必须更新 `adr/README.md` 索引和 `00_DOC_RULES.md` ADR 列表
+### D) 自测与门禁
+- 运行单测/集成/E2E；
+- 文档相关变更需本地 `mkdocs build`；
+- 若触及文档质量门禁，需跑 `mkdocs build --strict` 并消除 P0 级阻断类 warnings（零容忍）。
 
-### Definition of Done（验收标准）
+### E) Definition of Done
+每条都必须打勾：
 
-- [ ] `mkdocs build` 通过（无 ERROR）
-- [ ] 发布级修改需 `mkdocs build --strict` 通过
-- [ ] 新增/修改的链接可跳转
-- [ ] 新增页面已加入导航
-- [ ] 术语使用符合 `00_DOC_RULES.md` 术语表
+✔ 功能实现完成且测试通过（含命令与关键输出）  
+✔ 无敏感信息泄露（必要时脱敏说明）  
+✔ 接口契约不被破坏  
+✔ 文档更新（如需）或明确无需更新的原因  
+✔ 提交信息清晰（Why / What / How；验收步骤；回滚方式）  
+✔ 合并与推送完成（受门禁保护）
 
----
-
-## 常用命令速查
-
-### 文档相关
-
-```powershell
-# 预览文档站点
-mkdocs serve
-
-# 构建（开发）
-mkdocs build
-
-# 构建（严格/CI）
-mkdocs build --strict
-
-# 检查特定文件链接
-# 看 mkdocs build 输出的 WARNING
-```
-
-### Daemon 相关
-
-```powershell
-# 启动 Daemon
-D:\claude1\MCPAgents\apps\mcpagentsd\bin\mcpagentsd.exe serve --port 8787
-
-# 健康检查
-curl http://127.0.0.1:8787/v1/health
-
-# 停止
-curl -X POST http://127.0.0.1:8787/admin/shutdown -H "Authorization: Bearer TOKEN"
-```
-
-### 代码格式化
-
-```powershell
-# Dart 格式化
-dart format .
-
-# Dart 分析
-dart analyze
-```
+#### 📌 合并与推送规则
+- 所有改动必须通过 PR merge；
+- 禁止直接 push 到 main（除非机器人专用同步分支）；
+- 若启用 **Auto‑merge**：
+  - 必须确认仓库设置允许；
+  - 所有 required checks / reviews 必须先满足；
+  - 若 auto‑merge 不可用，需明确说明原因。
 
 ---
 
-## 项目关键决策（ADR 摘要）
+## 📄 Public Docs Sync Contract（跨对话公开文档契约）
 
-| ADR | 决策 | 理由 |
-|-----|------|------|
-| ADR-0001 | 单写者 Daemon | 避免 CRDT 复杂性，SQLite 足够 |
-| ADR-0002 | SSE 事件流 | 比 WebSocket 更适合单向推送 |
-| ADR-0003 | CAS 状态机 | 无锁、无死锁、SQLite 原生支持 |
+目标：任何阶段/新对话开启后，都能以公共站（https://yllrbill.github.io/mcpagents-development-docs/）作为唯一可追踪事实源。
 
-详见 `docs/guide/adr/`
+### 触发条件（任一命中即必须同步）
+- 改动触及：
+  - API/端点
+  - 事件类型
+  - 配置字段/默认值
+  - Run/Daemon/SSE 协议契约
+  - CAS/并发语义
+  - MCP 安全边界
+  - 运维步骤
+  - CI双轨策略
+  - Public export scope 白名单
+
+- 或者：用户可见行为变化（日志、错误码/分类、默认策略、权限策略）
+
+### 完成定义（DoD 必须满足）
+1) 在 `docs/guide/` 更新/新增对应页面；
+2) 本地/CI 校验通过：`mkdocs build --strict`（P0 级阻断为 0）；
+3) 触发/运行 “sync‑to‑public‑docs” workflow，将白名单范围内文档同步到 yllrbill/mcpagents-development-docs；
+4) 同步验证：
+   - 公共仓对应 commit SHA 已包含文档变更；
+   - Pages 已部署成功（Actions 绿/站点可访问）；
+5) 若不需更新文档：在 PR 描述写明 `Docs: no changes (reason: …)`。
+
+### 安全要求
+- 同步过程中不得输出/回显任何 secret；
+- 跨仓凭据优先使用 **SSH Deploy Key（目标仓最小权限）**；
+- 不得使用超范围 PAT。
 
 ---
 
-## 注意事项
+## 🧠 交付输出格式（长驻规范）
+每次回复都按这个结构：
 
-### Windows 特有问题
-
-1. **路径分隔符**: 使用 `\` 或 `/` 都可以，但 PowerShell 推荐 `\`
-2. **文件名大小写**: Windows 不区分，不要用大小写变化来重命名
-3. **终端编码**: 中文可能显示乱码，但不影响实际功能
-
-### Claude Code 工具使用
-
-1. **Read before Edit**: 必须先读文件才能编辑
-2. **Edit vs Write**: 优先用 Edit（增量修改），Write 会覆盖整个文件
-3. **Bash 路径**: Windows 下用 PowerShell 命令，注意路径引号
-
----
-
-## 相关文档
-
-- [文档规范](docs/guide/00_DOC_RULES.md)
-- [运维手册](docs/guide/runbook/daemon_ops.md)
-- [故障排查](docs/guide/runbook/troubleshooting.md)
-- [扩展开发](docs/guide/howto/add_extension.md)
+1) 现状评估（引用文件/段落依据）  
+2) 本次里程碑与任务列表（每项含：验收标准 / 改动范围 / 风险 / 回滚）  
+3) 实施结果（变更摘要 + 关键 diff + 测试命令/输出）  
+4) 文档更新说明（改了哪些页面/章节，或写明无需更新的理由）  
+5) 下一步（仅一个最高优先级目标）
