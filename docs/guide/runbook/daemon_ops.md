@@ -448,6 +448,81 @@ mkdocs gh-deploy
 
 ---
 
+## 9. 故障注入测试
+
+> M2 里程碑新增。用于验证 Daemon 在异常场景下的行为。
+
+### 9.1 测试脚本位置
+
+```
+scripts/fault_injection/
+├── test_port_conflict.ps1/.sh      # 端口冲突 → 快速失败
+├── test_appdata_unavailable.ps1/.sh # 数据目录不可用 → 优雅降级
+└── test_crash_recovery.ps1/.sh      # 崩溃后重启 → 恢复正常
+```
+
+### 9.2 退出码约定
+
+| 退出码 | 含义 | 说明 |
+|--------|------|------|
+| 0 | TEST PASSED | 测试通过 |
+| 1 | TEST FAILED | 测试失败 |
+| 2 | PRECONDITION FAILURE | 前置条件不满足（附可操作建议） |
+
+### 9.3 手动运行测试
+
+```powershell
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\fault_injection\test_port_conflict.ps1
+powershell -ExecutionPolicy Bypass -File scripts\fault_injection\test_appdata_unavailable.ps1 -Port 8789
+powershell -ExecutionPolicy Bypass -File scripts\fault_injection\test_crash_recovery.ps1 -Port 8790
+
+# Linux/macOS
+./scripts/fault_injection/test_port_conflict.sh
+PORT=8789 ./scripts/fault_injection/test_appdata_unavailable.sh
+PORT=8790 ./scripts/fault_injection/test_crash_recovery.sh
+```
+
+### 9.4 CI 集成
+
+故障注入测试在以下情况自动运行：
+
+- **Nightly**: 每日 ~04:00 UTC（可能因队列延迟）
+- **手动触发**: GitHub Actions → workflow_dispatch
+
+查看 `.github/workflows/daemon-ci.yml` 中的 `fault-injection-linux` 和 `fault-injection-windows` jobs。
+
+### 9.5 常见问题
+
+**Q: 端口测试失败显示 "Port already in use"**
+
+```powershell
+# 查找占用进程
+Get-NetTCPConnection -LocalPort 8787 -State Listen
+# 或
+netstat -ano | findstr ":8787"
+
+# 停止占用进程
+Stop-Process -Id <PID> -Force
+```
+
+**Q: 崩溃恢复测试显示 "Database locked"**
+
+SQLite WAL 模式下可能存在锁文件残留：
+
+```powershell
+# 检查锁文件
+dir "$env:APPDATA\MCPAgents\*.sqlite*"
+
+# 等待自动释放（推荐）
+Start-Sleep -Seconds 5
+
+# 或手动清理（谨慎，可能丢失未提交数据）
+# Remove-Item "$env:APPDATA\MCPAgents\*.sqlite-wal"
+```
+
+---
+
 ## 相关文档
 
 - [故障排查](troubleshooting.md)
